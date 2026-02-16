@@ -3,6 +3,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { sessionService } from '../api/sessions';
 import { Activity, ActivityType } from '../types';
 
+/**
+ * Check if we are running inside Electron.
+ */
+const isElectron = (): boolean => {
+  return !!(window as any).electron;
+};
+
 export const useHeartbeat = (sessionId: string | undefined) => {
   const lastActivityTime = useRef<number>(Date.now());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -52,25 +59,55 @@ export const useHeartbeat = (sessionId: string | undefined) => {
       lastActivityTime.current = Date.now();
     };
 
-    // Add comprehensive event listeners
+    // Add comprehensive event listeners (for browser-only tracking)
     window.addEventListener('mousemove', recordActivity);
     window.addEventListener('keydown', recordActivity);
     window.addEventListener('click', recordActivity);
     window.addEventListener('scroll', recordActivity);
 
     // Accumulation Interval (every 60s)
-    const accumulationInterval = setInterval(() => {
-      const now = Date.now();
-      const idleThreshold = 60 * 1000; // 60 seconds
-      const isIdle = (now - lastActivityTime.current) >= idleThreshold;
-      const isVisible = document.visibilityState === 'visible';
-      
-      const activityType: ActivityType = (isIdle || !isVisible) ? 'idle' : 'active';
-      
+    const accumulationInterval = setInterval(async () => {
+      let activityType: ActivityType;
+      let url: string;
+
+      if (isElectron() && window.electron?.getTrackingData) {
+        // ── ELECTRON MODE: Use native system-level tracking ──
+        try {
+          const trackingData = await window.electron.getTrackingData();
+
+          if (trackingData) {
+            activityType = trackingData.isSystemIdle ? 'idle' : 'active';
+            // Use the active window's app name + title as the "url" field
+            url = trackingData.activeWindowUrl
+              || `${trackingData.activeWindowApp}: ${trackingData.activeWindowTitle}`;
+          } else {
+            // Fallback if tracking data is null
+            activityType = 'idle';
+            url = 'Unknown (tracking data unavailable)';
+          }
+        } catch (error) {
+          console.error('Electron tracking failed, falling back to browser:', error);
+          // Fallback to browser-based detection
+          const now = Date.now();
+          const isIdle = (now - lastActivityTime.current) >= 60000;
+          activityType = isIdle ? 'idle' : 'active';
+          url = window.location.href;
+        }
+      } else {
+        // ── BROWSER MODE: Original browser-based detection ──
+        const now = Date.now();
+        const idleThreshold = 60 * 1000;
+        const isIdle = (now - lastActivityTime.current) >= idleThreshold;
+        const isVisible = document.visibilityState === 'visible';
+        
+        activityType = (isIdle || !isVisible) ? 'idle' : 'active';
+        url = window.location.hostname === 'localhost' ? 'https://work-pulse.app/dashboard' : window.location.href;
+      }
+
       const activity: Omit<Activity, 'id' | 'session_id' | 'created_at' | 'updated_at'> = {
         activity_type: activityType,
         duration_seconds: 60,
-        url: window.location.hostname === 'localhost' ? 'https://work-pulse.app/dashboard' : window.location.href,
+        url,
         timestamp: new Date(Date.now() - 60000).toISOString(),
         client_activity_id: uuidv4(),
       };
@@ -89,9 +126,7 @@ export const useHeartbeat = (sessionId: string | undefined) => {
         
         try {
             await sessionService.bulkSyncActivities(sessionId, activitiesToSync);
-            // On success, filter out the sycned items (in case new ones were added during await)
-            // Ideally we just remove the ones we sent.
-            // Using client_activity_id to safely remove.
+            // On success, filter out the synced items
             const syncedIds = new Set(activitiesToSync.map(a => a.client_activity_id));
             activityQueue.current = activityQueue.current.filter(a => !syncedIds.has(a.client_activity_id));
             saveQueue();
