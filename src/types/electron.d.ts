@@ -3,17 +3,18 @@ export interface ElectronTrackingData {
   systemIdleTime: number;
   activeWindowTitle: string;
   activeWindowApp: string;
-  activeWindowUrl?: string;
+  activeWindowUrl: string | null;
   timestamp: string;
 }
 
 export interface ElectronAPI {
   getActiveWindow: () => Promise<any>;
   getTrackingData: () => Promise<ElectronTrackingData>;
+  log: (msg: string) => void;
 }
 
 declare global {
   interface Window {
-    electron?: ElectronAPI;
+    electron?: ElectronAPI | undefined;
   }
 }

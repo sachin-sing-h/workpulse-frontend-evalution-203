@@ -1,6 +1,9 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { collectTrackingData, getActiveWindowInfo } from './tracker'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
 //
@@ -25,14 +28,35 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: false, // Try disabling sandbox
     },
   })
 
+
   if (VITE_DEV_SERVER_URL) {
+    console.log('Load URL:', VITE_DEV_SERVER_URL);
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    win.loadFile(path.join(process.env.DIST!, 'index.html'))
+    // Fallback for dev mode if env var is missing
+    console.log('VITE_DEV_SERVER_URL is missing.');
+    if (!app.isPackaged) {
+      console.log('App is not packaged. Trying localhost:5173');
+      win.loadURL('http://localhost:5173');
+    } else {
+      console.log('App is packaged. Loading file.');
+      win.loadFile(path.join(process.env.DIST!, 'index.html'))
+    }
   }
+  // Open DevTools (attached to window)
+  win.webContents.openDevTools({ mode: 'right' });
+
+  // Global shortcut to toggle DevTools
+  win.webContents.on('before-input-event', (event, input) => {
+    if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+      win?.webContents.toggleDevTools();
+      event.preventDefault();
+    }
+  });
 }
 
 // Quit when all windows are closed, except on macOS.
@@ -71,4 +95,9 @@ app.whenReady().then(() => {
       return null;
     }
   })
+
+  // IPC: Log from Renderer to Terminal
+  ipcMain.on('renderer-log', (_event, message) => {
+    console.log('RENDERER:', message);
+  });
 })

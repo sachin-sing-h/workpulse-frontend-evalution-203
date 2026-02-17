@@ -62,11 +62,21 @@ export interface AuthData {
 
 export type AuthResponse = ApiResponse<AuthData>;
 
+export interface AppUsage {
+  app: string;
+  active_seconds: number;
+  idle_seconds: number;
+  total_seconds: number;
+}
+
 export interface DailyReport {
   date: string;
-  total_active_seconds: number;
-  total_idle_seconds: number;
+  total_work_seconds: number;
+  active_seconds: number;
+  idle_seconds: number;
+  productivity_score: string;
   sessions: Session[];
+  app_usage: AppUsage[];
 }
 
 export interface OrganizationReportItem {

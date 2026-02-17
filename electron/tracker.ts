@@ -6,7 +6,7 @@ export interface TrackingData {
   systemIdleTime: number;       // seconds
   activeWindowTitle: string;
   activeWindowApp: string;
-  activeWindowUrl?: string;     // for browsers
+  activeWindowUrl: string | null;     // for browsers
   timestamp: string;
 }
 
@@ -54,7 +54,7 @@ export async function collectTrackingData(idleThresholdSeconds = 60): Promise<Tr
     systemIdleTime,
     activeWindowTitle: windowInfo?.title || 'Unknown',
     activeWindowApp: windowInfo?.app || 'Unknown',
-    activeWindowUrl: windowInfo?.url,
+    activeWindowUrl: windowInfo?.url || null,
     timestamp: new Date().toISOString(),
   };
 }

@@ -10,6 +10,18 @@ export default defineConfig({
       {
         // Main process entry
         entry: 'electron/main.ts',
+        onstart(options) {
+          options.startup()
+        },
+        vite: {
+          resolve: {
+            alias: {
+              'mock-aws-s3': 'electron/mock-aws.js',
+              'aws-sdk': 'electron/mock-aws.js',
+              'nock': 'electron/mock-aws.js',
+            },
+          },
+        },
       },
       {
         // Preload scripts entry

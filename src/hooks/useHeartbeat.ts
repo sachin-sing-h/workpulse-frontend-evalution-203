@@ -11,6 +11,7 @@ const isElectron = (): boolean => {
 };
 
 export const useHeartbeat = (sessionId: string | undefined) => {
+  console.log('useHeartbeat HOOK RENDERED. SessionId:', sessionId, 'Is Electron?', isElectron());
   const lastActivityTime = useRef<number>(Date.now());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
@@ -70,10 +71,12 @@ export const useHeartbeat = (sessionId: string | undefined) => {
       let activityType: ActivityType;
       let url: string;
 
-      if (isElectron() && window.electron?.getTrackingData) {
+      const electronAvailable = isElectron() && !!window.electron?.getTrackingData;
+
+      if (electronAvailable) {
         // ── ELECTRON MODE: Use native system-level tracking ──
         try {
-          const trackingData = await window.electron.getTrackingData();
+          const trackingData = await window.electron!.getTrackingData();
 
           if (trackingData) {
             activityType = trackingData.isSystemIdle ? 'idle' : 'active';
@@ -86,7 +89,7 @@ export const useHeartbeat = (sessionId: string | undefined) => {
             url = 'Unknown (tracking data unavailable)';
           }
         } catch (error) {
-          console.error('Electron tracking failed, falling back to browser:', error);
+          console.error(`Electron tracking FAILED: ${error}`);
           // Fallback to browser-based detection
           const now = Date.now();
           const isIdle = (now - lastActivityTime.current) >= 60000;
@@ -115,7 +118,12 @@ export const useHeartbeat = (sessionId: string | undefined) => {
       // Add to queue
       activityQueue.current.push(activity);
       saveQueue();
-    }, 60000);
+
+      // Trigger sync immediately to avoid 60s race condition
+      if (navigator.onLine) {
+        flushQueue();
+      }
+    }, 60000); // 60s Interval
 
     // Bulk Sync / Flush Logic
     const flushQueue = async () => {
@@ -125,7 +133,20 @@ export const useHeartbeat = (sessionId: string | undefined) => {
         const activitiesToSync = [...activityQueue.current];
         
         try {
+            const logMsg = `📤 Syncing Activities: ${JSON.stringify(activitiesToSync, null, 2)}`;
+            if ((window as any).electron?.log) {
+                (window as any).electron.log(logMsg);
+            } else {
+                console.log(logMsg);
+            }
+
             await sessionService.bulkSyncActivities(sessionId, activitiesToSync);
+            const successMsg = `✓ Synced ${activitiesToSync.length} activities.`;
+            if ((window as any).electron?.log) {
+                (window as any).electron.log(successMsg);
+            } else {
+                console.log(successMsg);
+            }
             // On success, filter out the synced items
             const syncedIds = new Set(activitiesToSync.map(a => a.client_activity_id));
             activityQueue.current = activityQueue.current.filter(a => !syncedIds.has(a.client_activity_id));
@@ -135,12 +156,12 @@ export const useHeartbeat = (sessionId: string | undefined) => {
         }
     };
 
-    // Bulk Sync Interval (every 5 minutes)
+    // Bulk Sync Interval (every 60s)
     const syncInterval = setInterval(async () => {
         if (activityQueue.current.length > 0 && navigator.onLine) {
             await flushQueue();
         }
-    }, 5 * 60 * 1000);
+    }, 60 * 1000);
 
     // Initial flush of any stored offline data if we are online now
     if (navigator.onLine && activityQueue.current.length > 0) {

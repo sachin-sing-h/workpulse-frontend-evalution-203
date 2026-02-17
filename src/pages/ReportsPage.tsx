@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { reportService } from '../api/reports';
-import { Download, TrendingUp, Zap, Clock } from 'lucide-react';
+import { TrendingUp, Zap, Clock } from 'lucide-react';
 
 const ReportsPage: React.FC = () => {
   const { user } = useAuth();
@@ -61,6 +61,51 @@ const ReportsPage: React.FC = () => {
     const m = Math.floor((seconds % 3600) / 60);
     return `${h}h ${m}m`;
   };
+
+  const AppUsageTable = ({ usage }: { usage: any[] }) => (
+    <div className="card" style={{ marginTop: '2rem' }}>
+      <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+        <h3 style={{ margin: 0 }}>App Usage Analysis</h3>
+      </div>
+      <div className="table-container">
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left", padding: "1rem", borderBottom: "1px solid var(--border)", color: "var(--text-dim)" }}>Application</th>
+              <th style={{ textAlign: "right", padding: "1rem", borderBottom: "1px solid var(--border)", color: "var(--text-dim)" }}>Active</th>
+              <th style={{ textAlign: "right", padding: "1rem", borderBottom: "1px solid var(--border)", color: "var(--text-dim)" }}>Idle</th>
+              <th style={{ textAlign: "right", padding: "1rem", borderBottom: "1px solid var(--border)", color: "var(--text-dim)" }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(usage || []).map((app, idx) => (
+              <tr key={idx}>
+                <td style={{ padding: "1rem", borderBottom: "1px solid var(--border)", fontWeight: "500" }}>
+                  {app.app}
+                </td>
+                <td style={{ textAlign: "right", padding: "1rem", borderBottom: "1px solid var(--border)", color: "var(--success)" }}>
+                  {formatSeconds(app.active_seconds)}
+                </td>
+                <td style={{ textAlign: "right", padding: "1rem", borderBottom: "1px solid var(--border)", color: "var(--error)" }}>
+                  {formatSeconds(app.idle_seconds)}
+                </td>
+                <td style={{ textAlign: "right", padding: "1rem", borderBottom: "1px solid var(--border)" }}>
+                  {formatSeconds(app.total_seconds)}
+                </td>
+              </tr>
+            ))}
+            {(!usage || usage.length === 0) && (
+              <tr>
+                <td colSpan={4} style={{ padding: "3rem", textAlign: "center", color: "var(--text-dim)" }}>
+                  No app activity recorded
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
   if (loading && !reportData) {
      return <div className="loading" style={{ height: '50vh' }}>Loading reports...</div>;
   }
@@ -89,6 +134,7 @@ const ReportsPage: React.FC = () => {
                No activity data found for this user today.
              </p>
            ) : (
+             <>
              <div className="grid">
                 <div className="stat-card" style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -132,6 +178,9 @@ const ReportsPage: React.FC = () => {
                   </div>
                 </div>
              </div>
+              
+              <AppUsageTable usage={userReport.app_usage} />
+            </>
            )}
         </div>
       </div>
@@ -270,6 +319,8 @@ const ReportsPage: React.FC = () => {
                 </span>
             </div>
           </div>
+          
+          <AppUsageTable usage={reportData.app_usage} />
         </div>
       )}
     </div>

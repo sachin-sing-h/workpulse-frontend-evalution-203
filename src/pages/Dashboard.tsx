@@ -274,7 +274,7 @@ const Dashboard: React.FC = () => {
       )}
 
       <div className="grid">
-        {user?.role=== "employee" && (
+        {/* {user?.role=== "employee" && (
           <>
         <div className="card stat-card">
           <div style={{ color: "var(--text-dim)", fontSize: "0.875rem" }}>
@@ -309,7 +309,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
         </>
-        )}
+        )} */}
         <div 
           className="card stat-card" 
           onClick={() => navigate('/projects')}

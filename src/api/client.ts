@@ -10,12 +10,25 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor for token
+// Request interceptor to add the auth token
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('wp_token');
     if (token) {
+      const logMsg = `🔑 JWT Token: ${token}`;
+      if ((window as any).electron?.log) {
+        (window as any).electron.log(logMsg);
+      } else {
+        console.log(logMsg);
+      }
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      const logMsg = '⚠️  No JWT token found in localStorage';
+      if ((window as any).electron?.log) {
+        (window as any).electron.log(logMsg);
+      } else {
+        console.log(logMsg);
+      }
     }
     return config;
   },
@@ -26,7 +39,10 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Check if the error is from the login endpoint itself
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    
+    if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem('wp_token');
       localStorage.removeItem('wp_user');
       window.location.href = '/login';

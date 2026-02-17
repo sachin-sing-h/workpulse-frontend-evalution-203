@@ -18,11 +18,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     navigate('/login');
   };
 
+  const isElectronApp = !!(window as any).electron;
+
   return (
     <div className="app-layout">
       <aside className="sidebar">
         <div className="logo">
           WorkPulse
+          <div style={{ 
+             fontSize: '0.65rem', 
+             background: 'rgba(255,255,255,0.1)', 
+             padding: '2px 6px', 
+             borderRadius: '4px',
+             color: isElectronApp ? '#4ade80' : '#f43f5e',
+             marginTop: '4px',
+             fontWeight: 'normal'
+           }}>
+             {isElectronApp ? 'Electron Mode' : 'Browser Mode'}
+           </div>
         </div>
         
         <nav style={{ flex: 1 }}>
