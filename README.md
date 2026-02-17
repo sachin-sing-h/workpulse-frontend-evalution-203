@@ -1,50 +1,82 @@
-# React + TypeScript + Vite
+# WorkPulse Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend repository for the WorkPulse application, built with React, TypeScript, Vite, and Electron.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Before starting, ensure you have the correct Node.js version installed. This project uses **Node.js v24.4.1**.
 
-## Expanding the ESLint configuration
+### Using NVM (Node Version Manager)
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+We recommend using [nvm](https://github.com/nvm-sh/nvm) (Linux/macOS) or [nvm-windows](https://github.com/coreybutler/nvm-windows) to manage your Node.js versions.
 
-- Configure the top-level `parserOptions` property like this:
+1.  **Install the correct Node version:**
+    Navigate to the project root directory and run:
+    ```bash
+    nvm install
+    nvm use
+    ```
+    This will read the version specified in the `.nvmrc` file (`v24.4.1`) and install/use it.
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Installation
+
+Install the project dependencies using npm:
+
+```bash
+npm install
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Available Scripts
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+In the project directory, you can run:
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+### `npm run dev` / `npm start`
+
+Runs the app in the development mode using Vite.
+Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
+
+### `npm run electron:dev`
+
+Starts the application in Electron development mode.
+
+### `npm run build`
+
+Builds the app for production. It compiles the TypeScript code, builds the Vite app, and packages it using `electron-builder`.
+
+### `npm run lint`
+
+Runs the linter to check for code quality and style issues.
+
+### `npm run preview`
+
+Locally preview the production build.
+
+## Project Structure
+
+- **src/**: Source code for the React application.
+- **electron/**: Main process code for Electron.
+- **dist/**: Production build output.
+
+## Dependencies
+
+### Core
+
+- **React**: UI library.
+- **TypeScript**: Static type checking.
+- **Vite**: Build tool and development server.
+- **Electron**: Framework for building desktop applications.
+
+### Key Libraries
+
+- **active-win**: Tracks active window usage (for activity tracking features).
+- **axios**: HTTP client for API requests.
+- **idb**: IndexedDB wrapper for local storage.
+- **lucide-react**: Icon library.
+- **react-router-dom**: Routing for React.
+- **socket.io-client**: Real-time communication.
+- **zustand**: State management.
+- **uuid**: Unique ID generation.
+
+## ESLint Configuration
+
+This project includes a comprehensive ESLint configuration for code quality, focusing on React and TypeScript best practices.
